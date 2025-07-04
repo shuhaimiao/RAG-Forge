@@ -9,12 +9,12 @@ services:
       - ollama_data:/root/.ollama
     container_name: ollama
     environment:
-      - OLLAMA_MODELS_TO_PULL=nomic-embed-text,llama3
+      - OLLAMA_MODELS_TO_PULL=dengcao/Qwen3-Embedding-0.6B:Q8_0,qwen3:1.7b
     healthcheck:
       test: |
         (
-          curl -s --fail http://localhost:11434/api/tags | grep -q 'nomic-embed-text' &&
-          curl -s --fail http://localhost:11434/api/tags | grep -q 'llama3'
+          curl -s --fail http://localhost:11434/api/tags | grep -q 'dengcao/Qwen3-Embedding-0.6B:Q8_0' &&
+          curl -s --fail http://localhost:11434/api/tags | grep -q 'qwen3:1.7b'
         ) || exit 1
       interval: 10s
       timeout: 5s
@@ -85,8 +85,8 @@ services:
       - MILVUS_HOST=milvus
       - MILVUS_PORT=19530
       - OLLAMA_HOST=http://ollama:11434
-      - EMBEDDING_MODEL=nomic-embed-text
-      - LLM_MODEL=llama3
+      - EMBEDDING_MODEL=dengcao/Qwen3-Embedding-0.6B:Q8_0
+      - LLM_MODEL=qwen3:1.7b
     depends_on:
       milvus:
         condition: service_healthy

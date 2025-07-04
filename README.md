@@ -25,7 +25,7 @@
 
 **1. Setup the Environment:**
 * Use the `docker-compose.yml` to launch Milvus, Ollama, and the main application container.
-* Pull required models via Ollama: `nomic-embed-text` for embeddings and `llama3` for generation.
+* Pull required models via Ollama: `dengcao/Qwen3-Embedding-0.6B:Q8_0` for embeddings and `qwen3:1.7b` for generation.
 
 **2. Implement the Ingestion Pipeline (`src/ingestion/ingest.py`):**
 * **Focus:** Start with a single document type (e.g., Markdown files containing best practices) placed in the `/data` directory.
@@ -34,7 +34,7 @@
     * *Example:* `{'source': 'api-best-practices.md', 'doc_type': 'best_practice'}`
 * **Embedding & Loading:**
     * Connect to the local Ollama service.
-    * Generate a vector embedding for each chunk using `nomic-embed-text`.
+    * Generate a vector embedding for each chunk using `dengcao/Qwen3-Embedding-0.6B:Q8_0`.
     * Connect to the Milvus service and load the vector, the raw text chunk, and its metadata into a new collection.
 
 **3. Implement the Core RAG API (`src/main.py` & `src/core.py`):**
@@ -55,7 +55,7 @@
 
         --- ANSWER ---
         ```
-    4.  Send the complete prompt to the Ollama `llama3` model for generation.
+    4.  Send the complete prompt to the Ollama `qwen3:1.7b` model for generation.
     5.  Return the LLM's response.
 
 **4. Build the Simple UI (`src/ui.py`):**
@@ -93,7 +93,7 @@ This command will:
 - Pull the required Docker images for Milvus and Ollama.
 - Build the custom application container.
 - Start all the services.
-- The first time you run this, the `start.sh` script inside the `app` container will automatically download the `nomic-embed-text` and `llama3` models. This might take some time depending on your internet connection.
+- The first time you run this, the `start.sh` script inside the `app` container will automatically download the `dengcao/Qwen3-Embedding-0.6B:Q8_0` and `qwen3:1.7b` models. This might take some time depending on your internet connection.
 - It will then run the data ingestion script to populate the Milvus vector database.
 
 **2. Access the Application:**

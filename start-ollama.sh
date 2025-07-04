@@ -4,14 +4,14 @@
 set -e
 
 # Start the main Ollama server process in the background
-/bin/ollama serve &
+ollama serve &
 OLLAMA_PID=$!
 
 echo "Ollama server started with PID $OLLAMA_PID"
 
 # Wait for the Ollama API to be available
 echo "Waiting for Ollama API to be ready..."
-while ! curl -s --fail -o /dev/null http://localhost:11434; do
+while ! curl -s --fail http://localhost:11434/ > /dev/null; do
     sleep 1
 done
 echo "Ollama API is up and running."
@@ -19,10 +19,12 @@ echo "Ollama API is up and running."
 # Check for and pull models if the OLLAMA_MODELS_TO_PULL variable is set
 if [ -n "$OLLAMA_MODELS_TO_PULL" ]; then
     # Split the comma-separated string into an array of model names
-    IFS=',' read -r -a models <<< "$OLLAMA_MODELS_TO_PULL"
+    IFS=',' read -ra models <<< "$OLLAMA_MODELS_TO_PULL"
     for model in "${models[@]}"; do
+        # Trim whitespace
+        model=$(echo "$model" | xargs)
         # Check if the model is already available locally
-        if ! ollama list | grep -q "^${model}"; then
+        if ! ollama list | grep -q "^$model"; then
             echo "Model '$model' not found. Pulling it..."
             ollama pull "$model"
             echo "Model '$model' pulled successfully."
