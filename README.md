@@ -88,7 +88,7 @@ To use the `github_copilot` provider, you first need to authenticate.
 
 1.  **Run the authentication script:**
     ```bash
-    python3 scripts/authenticate_github.py
+    ./authenticate.sh
     ```
 
 2.  The script will display a user code and open a browser window.

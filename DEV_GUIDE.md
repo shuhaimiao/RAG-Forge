@@ -44,7 +44,7 @@ The `get_llm()` factory function in `src/core.py` is responsible for instantiati
 To use GitHub Copilot, developers must first run the authentication script:
 
 ```bash
-python3 scripts/authenticate_github.py
+./authenticate.sh
 ```
 
 This script handles the OAuth 2.0 device flow and stores the resulting access token in `.secrets/github_token.json`, which is read by the application at runtime.
