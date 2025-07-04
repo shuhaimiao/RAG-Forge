@@ -148,3 +148,4 @@ logs/
 *.key
 
 opencode-gitignore.secrets/
+opencode-gitignore/
