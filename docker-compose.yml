@@ -1,0 +1,51 @@
+services:
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    container_name: ollama
+
+  milvus:
+    image: milvusdb/milvus:v2.4.4-standalone
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus_data:/milvus/data
+      - milvus_etcd:/milvus/etcd
+      - milvus_logs:/milvus/logs
+    container_name: milvus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  app:
+    build: .
+    ports:
+      - "8000:8000" # FastAPI
+      - "8501:8501" # Streamlit
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+    environment:
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+      - OLLAMA_HOST=http://ollama:11434
+      - EMBEDDING_MODEL=nomic-embed-text
+      - LLM_MODEL=llama3
+    depends_on:
+      milvus:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    container_name: rag-forge-app
+
+volumes:
+  ollama_data:
+  milvus_data:
+  milvus_etcd:
+  milvus_logs: 

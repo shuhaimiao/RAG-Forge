@@ -75,3 +75,34 @@
     * Implement query transformation techniques to better understand user intent.
     * Explore hybrid search (vector + keyword) for more robust retrieval.
     * Build an evaluation pipeline using a framework like RAGAs to objectively measure performance.
+
+---
+## How to Run
+
+This project is fully containerized using Docker Compose. Follow these steps to get the application running:
+
+**Prerequisites:**
+* Docker and Docker Compose installed on your machine.
+
+**1. Build and Start the Services:**
+Open your terminal and run the following command from the root of the project directory:
+```bash
+docker-compose up --build
+```
+This command will:
+- Pull the required Docker images for Milvus and Ollama.
+- Build the custom application container.
+- Start all the services.
+- The first time you run this, the `start.sh` script inside the `app` container will automatically download the `nomic-embed-text` and `llama3` models. This might take some time depending on your internet connection.
+- It will then run the data ingestion script to populate the Milvus vector database.
+
+**2. Access the Application:**
+Once all services are up and running, you can access the different parts of the application:
+* **Streamlit UI:** Open your web browser and go to `http://localhost:8501`. This is the main user interface for asking questions.
+* **FastAPI Backend:** The API is available at `http://localhost:8000`. You can access the auto-generated documentation at `http://localhost:8000/docs`.
+
+**3. Stopping the Application:**
+To stop all the services, press `Ctrl + C` in the terminal where `docker-compose up` is running. To remove the containers and associated volumes, you can run:
+```bash
+docker-compose down -v
+```
