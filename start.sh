@@ -27,9 +27,13 @@ wait_for_service milvus 19530 "Milvus"
 # 2. Run the data ingestion script to populate the vector database
 echo "Running data ingestion..."
 python -m src.ingestion.ingest
+echo "Data ingestion complete."
 
+# 3. Create a readiness file to signal that the app is ready
+touch /tmp/ready
+echo "Readiness probe file created."
 
-# 3. Start the FastAPI backend and the Streamlit UI
+# 4. Start the FastAPI backend and the Streamlit UI
 echo "Starting FastAPI and Streamlit services..."
 
 # Start FastAPI in the background

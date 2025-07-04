@@ -93,6 +93,11 @@ services:
       ollama:
         condition: service_healthy
     container_name: rag-forge-app
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   ollama_data:
