@@ -11,10 +11,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file into the container
-COPY ./requirements.txt /app/
+COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
+# Install the Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Add the project root to the PYTHONPATH
+ENV PYTHONPATH "${PYTHONPATH}:/app"
+
+# Copy the rest of the application source code into the container
+COPY . .
 
 # Copy the rest of the application's code into the container
 COPY ./src /app/src

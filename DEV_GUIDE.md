@@ -1,6 +1,72 @@
 # RAG-Forge Developer Guide
 
-Welcome to the RAG-Forge development team! This guide will walk you through the project's architecture, design, and core concepts to get you up and running quickly.
+This guide provides a deep dive into the architecture and components of the RAG-Forge project. It's intended for developers who want to understand, modify, or extend the application.
+
+## Core Architecture
+
+The project is designed with a "local-first" philosophy, ensuring that all data processing and AI model interactions happen on your local machine. It consists of three main services orchestrated by Docker Compose.
+
+### Architectural Diagram
+
+```mermaid
+graph TD
+    subgraph Your Machine
+        subgraph Docker Environment
+            A[User] -->|Asks Question| B(Streamlit UI)
+            B -->|Sends Query| C(FastAPI Backend)
+            C -->|Gets Embeddings| D(Ollama Service)
+            C -->|Searches Vectors| E(PostgreSQL + pgvector)
+            E -->|Returns Documents| C
+            C -->|Generates Answer| D
+            D -->|Returns Final Answer| C
+            C -->|Sends Answer| B
+        end
+    end
+
+    subgraph "Data Flow (Ingestion)"
+        F(Source Documents) --> G[Ingestion Script]
+        G -->|Gets Embeddings| D
+        G -->|Stores Data & Vectors| E
+    end
+
+```
+
+### Services
+
+*   **`app` (RAG-Forge Application)**:
+    *   This is the main container that runs the entire RAG application.
+    *   **FastAPI Backend (`src/main.py`)**: A robust API server that handles requests from the UI, orchestrates the RAG pipeline, and interacts with other services.
+    *   **Streamlit UI (`src/ui.py`)**: A user-friendly web interface for asking questions and viewing answers.
+    *   **Core Logic (`src/core.py` & `src/ingestion/`)**: The Python code responsible for data ingestion, embedding, retrieval, and generation.
+
+*   **`postgres` (Database)**:
+    *   This service runs a PostgreSQL database with the `pgvector` extension enabled.
+    *   It serves as a unified data store for both the vector embeddings and the associated text content, allowing for powerful queries that combine traditional SQL filtering with vector similarity search.
+
+*   **`ollama` (LLM & Embedding Service)**:
+    *   This service runs Ollama, which provides easy access to open-source Large Language Models.
+    *   It serves two purposes: generating the vector embeddings for documents and queries, and generating the final answer based on the retrieved context.
+
+## The RAG Pipeline in Detail
+
+### 1. Ingestion (`src/ingestion/ingest.py`)
+
+This script runs automatically when the `app` container starts. Its job is to populate the PostgreSQL database.
+
+1.  **Load Documents**: It scans the `data/` directory for source documents (e.g., Markdown files).
+2.  **Chunking**: It splits the documents into smaller, overlapping text chunks. This is crucial for providing focused context to the LLM.
+3.  **Embedding**: It connects to the `ollama` service to convert each text chunk into a numerical vector embedding.
+4.  **Store in PostgreSQL**: It connects to the `postgres` database and inserts the data: the original text chunk, its vector embedding, and any metadata.
+
+### 2. Retrieval & Generation (`src/core.py`)
+
+This is the heart of the application, triggered whenever a user asks a question.
+
+1.  **Embed Query**: The user's question is converted into a query vector using the same embedding model.
+2.  **Search PostgreSQL**: This query vector is used to search the `documents` table in PostgreSQL. `pgvector` efficiently finds the most "similar" text chunks from the database by comparing their vectors.
+3.  **Construct Prompt**: The most relevant chunks are retrieved and placed into a prompt template along with the original question. This provides the LLM with the necessary context.
+4.  **Generate Answer**: The final prompt is sent to the `ollama` service, which uses a powerful LLM to generate a human-readable answer based on the provided context.
+5.  **Return Response**: The answer and the source documents are sent back to the UI to be displayed to the user.
 
 ## Vision
 

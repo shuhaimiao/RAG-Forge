@@ -1,14 +1,18 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from src.core import query_rag
+from src.core import get_qa_chain
+
+# Initialize the QA chain
+qa_chain = get_qa_chain()
 
 # Define the request body model
-class AskRequest(BaseModel):
+class QueryRequest(BaseModel):
     query: str
 
 # Define the response body model
-class AskResponse(BaseModel):
+class QueryResponse(BaseModel):
     answer: str
+    source_documents: list
 
 # Create the FastAPI app
 app = FastAPI(
@@ -17,15 +21,18 @@ app = FastAPI(
     version="1.0.0",
 )
 
-@app.post("/api/v1/ask", response_model=AskResponse)
-async def ask(request: AskRequest):
+@app.post("/query", response_model=QueryResponse)
+def query_endpoint(request: QueryRequest):
     """
-    Receives a user's query, processes it through the RAG pipeline,
-    and returns the generated answer.
+    FastAPI endpoint to handle RAG queries.
     """
-    answer = query_rag(request.query)
-    return {"answer": answer}
+    result = qa_chain({"query": request.query})
+    
+    return QueryResponse(
+        answer=result["result"],
+        source_documents=[doc.dict() for doc in result["source_documents"]]
+    )
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the RAG-Forge API. Use the /api/v1/ask endpoint to post your questions."} 
+    return {"message": "RAG-Forge API is running."} 

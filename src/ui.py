@@ -1,49 +1,81 @@
 import streamlit as st
-import requests
+import sys
 import os
+import time
+import re
 
-# Get the API host from environment variables, with a default for local running
-API_HOST = os.getenv("API_HOST", "http://localhost:8000")
-API_ENDPOINT = f"{API_HOST}/api/v1/ask"
+from src.core import get_qa_chain
 
 # --- Streamlit Page Configuration ---
 st.set_page_config(
     page_title="RAG-Forge",
-    page_icon="🤖",
-    layout="wide"
+    page_icon="🛠️",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-# --- Page Title and Description ---
-st.title("🤖 RAG-Forge: Your Expert API Assistant")
-st.markdown("""
-Welcome to RAG-Forge! This is a smart assistant designed to help you with your API development questions.
-Ask anything about API best practices, and it will provide answers based on its knowledge base.
-""")
-st.divider()
+# --- Page Title ---
+st.title("🛠️ RAG-Forge")
+st.caption("A local RAG-based chatbot powered by Ollama, LangChain, and PostgreSQL with pgvector.")
 
-# --- User Input ---
-user_query = st.text_input(
-    "Ask your question about API development:",
-    placeholder="e.g., How should I handle API versioning?",
-    label_visibility="collapsed"
-)
+# --- QA Chain Initialization ---
+@st.cache_resource
+def load_qa_chain():
+    return get_qa_chain()
 
-if st.button("Get Answer", type="primary"):
-    if user_query:
-        with st.spinner("Forge is thinking..."):
-            try:
-                # --- Call the FastAPI Backend ---
-                response = requests.post(API_ENDPOINT, json={"query": user_query})
-                response.raise_for_status()  # Raise an exception for bad status codes
+qa_chain = load_qa_chain()
 
-                # --- Display the Answer ---
-                answer = response.json().get("answer")
-                st.success("Here is the answer:")
-                st.markdown(answer)
+# --- Chat Interface ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-            except requests.exceptions.RequestException as e:
-                st.error(f"Failed to connect to the RAG-Forge API. Please make sure the backend is running. Error: {e}")
-            except Exception as e:
-                st.error(f"An unexpected error occurred: {e}")
-    else:
-        st.warning("Please enter a question.") 
+# Display chat messages from history on app rerun
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# React to user input
+if prompt := st.chat_input("Ask me anything about your documents..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        
+        start_time = time.time()
+        with st.spinner("Thinking..."):
+            result = qa_chain({"query": prompt})
+            full_response = result.get("result", "Sorry, I could not find an answer.")
+            source_docs = result.get("source_documents", [])
+        end_time = time.time()
+        
+        thinking_time = end_time - start_time
+
+        # Use regex to find and extract the <think> block
+        think_pattern = r"<think>(.*?)</think>"
+        match = re.search(think_pattern, full_response, re.DOTALL)
+
+        think_content = ""
+        answer = full_response
+
+        if match:
+            think_content = match.group(1).strip()
+            answer = re.sub(think_pattern, "", full_response, flags=re.DOTALL).strip()
+        
+        # Display the final answer
+        message_placeholder.markdown(answer)
+        
+        # Display the thinking process in an expander if it exists
+        if think_content:
+            expander_label = f"Show thought process ({thinking_time:.2f}s)"
+            with st.expander(expander_label):
+                st.info(think_content)
+        
+        if source_docs:
+            with st.expander("Sources"):
+                for doc in source_docs:
+                    st.write(f"**Source:** `{doc.metadata.get('source', 'Unknown')}`")
+                    st.info(doc.page_content)
+
+    st.session_state.messages.append({"role": "assistant", "content": answer}) 

@@ -1,33 +1,47 @@
 #!/bin/bash
+# This script ensures that the required services are available before starting the main application.
 
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# --- Helper Functions ---
+# Function to wait for a service to be ready
 wait_for_service() {
-  local host=$1
-  local port=$2
-  local service_name=$3
-  echo "Waiting for $service_name to be available at $host:$port..."
-  while ! nc -z $host $port; do
-    sleep 1
-  done
-  echo "$service_name is up and running."
+    local host=$1
+    local port=$2
+    local service_name=$3
+    echo "Waiting for $service_name to be ready at $host:$port..."
+    while ! nc -z $host $port; do
+        echo "Still waiting for $service_name..."
+        sleep 2
+    done
+    echo "$service_name is up and running."
 }
 
-# --- Main Execution ---
+# --- Service Dependencies ---
+# The app depends on both PostgreSQL and Ollama.
 
-# 1. Wait for core services to be ready.
-#    The `depends_on` in docker-compose handles the health checks,
-#    but this adds an extra layer of robustness.
+# Wait for PostgreSQL
+wait_for_service postgres 5432 "PostgreSQL"
+
+# Wait for Ollama
 wait_for_service ollama 11434 "Ollama"
-wait_for_service milvus 19530 "Milvus"
 
-
-# 2. Run the data ingestion script to populate the vector database
-echo "Running data ingestion..."
-python -m src.ingestion.ingest
+# --- Data Ingestion ---
+# Once services are ready, run the data ingestion script.
+echo "Services are ready. Running data ingestion..."
+python src/ingestion/ingest.py
 echo "Data ingestion complete."
+
+# --- Application Startup ---
+# Start both the FastAPI backend and the Streamlit UI.
+
+# Start the FastAPI application in the background.
+echo "Starting FastAPI application in the background..."
+uvicorn src.main:app --host 0.0.0.0 --port 8000 &
+
+# Start the Streamlit UI in the foreground.
+echo "Starting Streamlit UI..."
+streamlit run src/ui.py --server.port 8501 --server.address 0.0.0.0
 
 # 3. Create a readiness file to signal that the app is ready
 touch /tmp/ready

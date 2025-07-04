@@ -1,65 +1,87 @@
-import ollama
-from pymilvus import MilvusClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+from langchain_core.documents import Document as LangChainDocument
+from langchain_ollama import OllamaEmbeddings, OllamaLLM
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
+from typing import Any, List
 
-from src.config import MILVUS_URI, COLLECTION_NAME, EMBEDDING_MODEL, LLM_MODEL
+from src.config import DB_CONNECTION_STRING, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_HOST
+from src.ingestion.ingest import Document as AppDocument  # Alias to avoid name conflict
 
-def query_rag(query: str) -> str:
+class VectorDBRetriever(BaseRetriever):
+    """A custom retriever that fetches documents from a PostgreSQL+pgvector database."""
+    engine: Any
+    Session: Any
+    embeddings: Any
+    k: int = 5
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[LangChainDocument]:
+        """
+        Embeds a query and retrieves the top-k most similar documents.
+        """
+        session = self.Session()
+        try:
+            query_embedding = self.embeddings.embed_query(query)
+            similar_docs = session.query(AppDocument).order_by(
+                AppDocument.embedding.l2_distance(query_embedding)
+            ).limit(self.k).all()
+            
+            return [
+                LangChainDocument(
+                    page_content=doc.content, 
+                    metadata={"source": doc.source}
+                )
+                for doc in similar_docs
+            ]
+        finally:
+            session.close()
+
+def get_embeddings_model():
+    """Initialize the Ollama embeddings model."""
+    return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_HOST)
+
+def get_qa_chain():
     """
-    Queries the RAG system.
-    1. Embeds the query.
-    2. Retrieves relevant context from Milvus.
-    3. Constructs a prompt.
-    4. Calls the LLM to generate an answer.
+    Initializes and returns a RetrievalQA chain.
     """
-    print(f"Received query: {query}")
-
-    # 1. Embed the query
-    print("Embedding the query...")
-    response = ollama.embeddings(model=EMBEDDING_MODEL, prompt=query)
-    query_embedding = response["embedding"]
-
-    # 2. Retrieve relevant context
-    print("Retrieving context from Milvus...")
-    client = MilvusClient(uri=MILVUS_URI)
-    search_results = client.search(
-        collection_name=COLLECTION_NAME,
-        data=[query_embedding],
-        limit=3,
-        output_fields=["text", "source"]
-    )
+    embeddings = get_embeddings_model()
+    engine = create_engine(DB_CONNECTION_STRING)
+    Session = sessionmaker(bind=engine)
     
-    context_chunks = [result['entity']['text'] for result in search_results[0]]
-    context_str = "\n\n---\n\n".join(context_chunks)
-
-    if not context_str:
-        return "I'm sorry, I couldn't find any relevant information to answer your question."
-
-    print("Context retrieved successfully.")
-    # print(f"Context: \n{context_str}")
-
-    # 3. Construct the prompt
-    prompt_template = """
-You are an expert API assistant. Your goal is to help developers by answering their questions based on the provided documentation. Use only the information from the following context to answer the question. If the context doesn't contain the answer, say that you don't have enough information.
-
---- CONTEXT ---
-{context}
-
---- QUESTION ---
-{question}
-
---- ANSWER ---
-"""
-    prompt = prompt_template.format(context=context_str, question=query)
-
-    # 4. Generate the answer
-    print("Generating answer with LLM...")
-    llm_response = ollama.chat(
-        model=LLM_MODEL,
-        messages=[{'role': 'user', 'content': prompt}]
+    retriever = VectorDBRetriever(
+        engine=engine,
+        Session=Session,
+        embeddings=embeddings
     )
+    llm = OllamaLLM(model=LLM_MODEL, base_url=OLLAMA_HOST)
 
-    print("Answer generated.")
-    return llm_response['message']['content']
+    template = """
+    You are a helpful AI assistant for the RAG-Forge project. Use the following
+    context to answer the question. First, think through your plan to answer the question inside <think></think> tags.
+    Then, answer the user's question. If you don't know the answer, say that you don't know, don't try to make up an answer.
+
+    Context: {context}
+    Question: {question}
+
+    Answer:
+    """
+    prompt = PromptTemplate.from_template(template)
+
+    qa_chain = RetrievalQA.from_chain_type(
+        llm,
+        retriever=retriever,
+        return_source_documents=True,
+        chain_type_kwargs={"prompt": prompt},
+    )
+    return qa_chain
 
 if __name__ == '__main__':
     # Example usage for direct testing
