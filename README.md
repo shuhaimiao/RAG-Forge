@@ -106,3 +106,13 @@ To stop all the services, press `Ctrl + C` in the terminal where `docker-compose
 ```bash
 docker-compose down -v
 ```
+
+**4. Testing the Application:**
+Once the application is running and the data ingestion is complete, you can test it with a sample query.
+
+1.  Navigate to the Streamlit UI at [http://localhost:8501](http://localhost:8501).
+2.  The ingestion script has processed the `data/api-best-practices.md` file, which contains information on API versioning, authentication, and error handling.
+3.  In the text input box, type a question related to the document's content. For example:
+    > How should I handle API versioning?
+4.  Click the "Get Answer" button.
+5.  The AI assistant should process the query and provide an answer based on the context from the document. For the example question, the expected response would be that API versions should be included in the URL (e.g., `/api/v1/users`).
