@@ -140,3 +140,9 @@ cython_debug/
 milvus_demo.db*
 volumes/
 logs/
+
+# User-specific files
+/documents_to_ingest/
+.DS_Store
+*.pem
+*.key

@@ -44,7 +44,6 @@ services:
       - "8501:8501" # Streamlit
     volumes:
       - ./src:/app/src
-      - ./data:/app/data
     environment:
       # PostgreSQL settings
       - POSTGRES_HOST=postgres

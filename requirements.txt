@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+python-multipart
 python-dotenv
 langchain
 langchain_community
@@ -12,3 +13,5 @@ pgvector
 requests
 tiktoken
 tqdm
+pypdf
+PyYAML

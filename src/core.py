@@ -9,7 +9,7 @@ from langchain.prompts import PromptTemplate
 from typing import Any, List
 
 from src.config import DB_CONNECTION_STRING, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_HOST
-from src.ingestion.ingest import Document as AppDocument  # Alias to avoid name conflict
+from src.models import Document as AppDocument  # Alias to avoid name conflict
 
 class VectorDBRetriever(BaseRetriever):
     """A custom retriever that fetches documents from a PostgreSQL+pgvector database."""
@@ -61,7 +61,14 @@ def get_qa_chain():
         Session=Session,
         embeddings=embeddings
     )
-    llm = OllamaLLM(model=LLM_MODEL, base_url=OLLAMA_HOST)
+    llm = OllamaLLM(
+        model=LLM_MODEL, 
+        base_url=OLLAMA_HOST,
+        mirostat=None,
+        mirostat_eta=None,
+        mirostat_tau=None,
+        tfs_z=None,
+    )
 
     template = """
     You are a helpful AI assistant for the RAG-Forge project. Use the following

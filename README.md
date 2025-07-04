@@ -15,57 +15,80 @@ RAG-Forge is a boilerplate project for building a local Retrieval-Augmented Gene
 
 The application follows a standard RAG pipeline:
 
-1.  **Ingestion**:
-    *   Documents from the `data/` directory are loaded.
-    *   They are split into smaller, manageable chunks.
-    *   The chunks are converted into vector embeddings using a local embedding model (via Ollama).
-    *   The text chunks and their corresponding embeddings are stored in a PostgreSQL database.
+### 1. Ingestion
 
-2.  **Retrieval & Generation**:
-    *   When you ask a question, the query is converted into a vector embedding.
-    *   The application queries PostgreSQL to find the most relevant text chunks from the database using vector similarity search.
-    *   The retrieved chunks (context) are combined with your original question into a prompt.
-    *   This prompt is sent to a local LLM (via Ollama) to generate a final answer.
+Data ingestion is now a manual process, giving you full control over what's in your knowledge base. You can ingest documents using the `POST /upload` endpoint. This is the recommended method for all updates, both for single documents and for bulk-loading. An example script is provided in `scripts/upload_document.py`.
 
-## Getting Started
+The ingestion process is idempotent: if you upload a document with the same filename, the old version will be deleted and replaced with the new one.
+
+Once a document is ingested:
+1.  It is split into smaller, manageable chunks.
+2.  The chunks are converted into vector embeddings using a local embedding model (via Ollama).
+3.  The text chunks and their corresponding embeddings are stored in a PostgreSQL database.
+
+### 2. Retrieval & Generation
+
+When you ask a question, the query is converted into a vector embedding.
+The application queries PostgreSQL to find the most relevant text chunks from the database using vector similarity search.
+The retrieved chunks (context) are combined with your original question into a prompt.
+This prompt is sent to a local LLM (via Ollama) to generate a final answer.
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-*   Docker and Docker Compose
-*   Git
+- Docker and Docker Compose
+- Python 3.8+ (for the upload script)
+- Git
 
-### Installation & Running
+### Installation & Startup
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/RAG-Forge.git
+    git clone https://github.com/shuhaimiao/RAG-Forge.git
     cd RAG-Forge
     ```
 
-2.  **Start the application:**
-    This command will build the Docker containers and start all the services. The first launch will take some time as it needs to download the Docker images and the Ollama models.
+2.  **Start the application stack:**
+    This command will build the Docker images and start the FastAPI backend, the Streamlit UI, the Ollama service, and the PostgreSQL database.
     ```bash
-    docker-compose up --build
+    ./start.sh
     ```
+    The first time you run this, it will download the LLM and embedding models, which may take some time depending on your internet connection.
 
-3.  **Access the application:**
-    *   **API**: The FastAPI backend is available at `http://localhost:8000`.
-    *   **UI**: The Streamlit interface is available at `http://localhost:8501`.
+3.  **Access the services:**
+    - **Streamlit UI**: [http://localhost:8501](http://localhost:8501)
+    - **FastAPI Backend Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-## Project Structure
+## 📄 Document Ingestion
 
+The primary way to add your own documents to the RAG system is through the `/upload` API endpoint. You can place your files in the `documents_to_ingest/` directory (which is git-ignored) and use the provided script to upload them.
+
+**Supported File Types:**
+- Markdown (`.md`)
+- Plain Text (`.txt`)
+- PDF (`.pdf`)
+- JSON (`.json`)
+- YAML (`.yml`, `.yaml`)
+
+To upload all supported documents from the `documents_to_ingest/` directory, run:
+```bash
+./upload.sh
 ```
-.
-├── data/                 # Your source documents go here
-├── src/
-│   ├── main.py           # FastAPI application
-│   ├── ui.py             # Streamlit UI
-│   ├── core.py           # Core RAG logic (retrieval & generation)
-│   ├── config.py         # Configuration settings
-│   └── ingestion/
-│       └── ingest.py     # Data ingestion and embedding script
-├── Dockerfile            # Dockerfile for the main application
-├── ollama.Dockerfile     # Dockerfile for the custom Ollama service
-├── docker-compose.yml    # Defines all services
-└── requirements.txt      # Python dependencies
+
+You can also upload a specific file or all files in a different directory:
+```bash
+# Upload a single file
+./upload.sh my_document.pdf
+
+# Upload all supported files from a different directory
+./upload.sh path/to/my/docs/
 ```
+
+When a document is uploaded, any existing data associated with the same filename is automatically removed and replaced with the new content, ensuring your knowledge base stays up-to-date.
+
+## 🛠️ Development
+
+For development guidelines, contribution instructions, and the project's architectural decisions, please refer to the [Developer's Guide (DEV_GUIDE.md)](DEV_GUIDE.md).
+
+## 📄 License

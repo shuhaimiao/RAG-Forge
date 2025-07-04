@@ -27,10 +27,10 @@ wait_for_service postgres 5432 "PostgreSQL"
 wait_for_service ollama 11434 "Ollama"
 
 # --- Data Ingestion ---
-# Once services are ready, run the data ingestion script.
-echo "Services are ready. Running data ingestion..."
-python src/ingestion/ingest.py
-echo "Data ingestion complete."
+# The data ingestion script (`src/ingestion/ingest.py`) can be run manually 
+# to bulk-load documents from the `data/` directory.
+# We no longer run it on startup to give the user control over ingestion.
+echo "Skipping automatic data ingestion. Use the /upload endpoint or run ingest.py manually."
 
 # --- Application Startup ---
 # Start both the FastAPI backend and the Streamlit UI.

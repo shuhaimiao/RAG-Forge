@@ -49,14 +49,13 @@ graph TD
 
 ## The RAG Pipeline in Detail
 
-### 1. Ingestion (`src/ingestion/ingest.py`)
+### 1. Ingestion (`src/ingestion/` & `src/main.py`)
 
-This script runs automatically when the `app` container starts. Its job is to populate the PostgreSQL database.
+Data ingestion is handled exclusively via a `POST /upload` API endpoint, which gives you full control over when and what gets added to the knowledge base.
 
-1.  **Load Documents**: It scans the `data/` directory for source documents (e.g., Markdown files).
-2.  **Chunking**: It splits the documents into smaller, overlapping text chunks. This is crucial for providing focused context to the LLM.
-3.  **Embedding**: It connects to the `ollama` service to convert each text chunk into a numerical vector embedding.
-4.  **Store in PostgreSQL**: It connects to the `postgres` database and inserts the data: the original text chunk, its vector embedding, and any metadata.
+1.  **Trigger**: An external script (like the example in `scripts/upload_document.py`) sends a file to the `/upload` endpoint.
+2.  **Process**: The API receives the file, splits it into smaller text chunks, and connects to the `ollama` service to convert each chunk into a vector embedding.
+3.  **Store**: The API then connects to the `postgres` database, deletes any existing chunks with the same source filename, and inserts the new data. This makes the process idempotent.
 
 ### 2. Retrieval & Generation (`src/core.py`)
 
