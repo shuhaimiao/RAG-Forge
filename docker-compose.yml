@@ -44,6 +44,7 @@ services:
       - "8501:8501" # Streamlit
     volumes:
       - ./src:/app/src
+      - ./.secrets:/app/.secrets
     environment:
       # PostgreSQL settings
       - POSTGRES_HOST=postgres
@@ -55,6 +56,9 @@ services:
       - OLLAMA_HOST=http://ollama:11434
       - EMBEDDING_MODEL=dengcao/Qwen3-Embedding-0.6B:Q8_0
       - LLM_MODEL=qwen3:1.7b
+      # LLM Provider
+      - LLM_PROVIDER=github_copilot
+      - GITHUB_COPILOT_TOKEN_PATH=/app/.secrets/github_token.json
     depends_on:
       postgres:
         condition: service_healthy

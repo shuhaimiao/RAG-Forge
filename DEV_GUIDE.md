@@ -1,6 +1,65 @@
-# RAG-Forge Developer Guide
+# RAG-Forge Developer's Guide
 
-This guide provides a deep dive into the architecture and components of the RAG-Forge project. It's intended for developers who want to understand, modify, or extend the application.
+This document provides technical details for developers working on the RAG-Forge project.
+
+## 🚀 Project Structure
+
+The project is organized into several key directories:
+
+-   `src/`: Contains the main application source code.
+    -   `core.py`: Core RAG logic, including the QA chain and LLM provider factory.
+    -   `main.py`: FastAPI application entry point and API endpoints.
+    -   `ui.py`: Streamlit user interface code.
+    -   `config.py`: Application configuration, loaded from environment variables.
+    -   `ingestion/`: Logic for document processing and embedding.
+    -   `models.py`: SQLAlchemy database models.
+-   `scripts/`: Contains utility and helper scripts.
+    -   `authenticate_github.py`: Handles the device auth flow for GitHub Copilot.
+    -   `upload_document.py`: Client-side script for uploading documents.
+-   `documents_to_ingest/`: A git-ignored directory for placing documents to be ingested.
+-   `.secrets/`: A git-ignored directory for storing sensitive information, such as API tokens.
+-   `docs/`: Project documentation, including ADRs.
+
+## 🧠 LLM Provider Configuration
+
+The application can be configured to use different Large Language Models (LLMs) for the generation step of the RAG pipeline. This is controlled by the `LLM_PROVIDER` environment variable.
+
+### Environment Variables
+
+-   `LLM_PROVIDER`: Determines which LLM to use.
+    -   `ollama` (default): Uses a local Ollama instance. The specific model is determined by the `LLM_MODEL` variable.
+    -   `github_copilot`: Uses the GitHub Copilot API.
+
+-   `GITHUB_COPILOT_TOKEN_PATH`: The path to the file containing the GitHub Copilot access token. This is used when `LLM_PROVIDER` is set to `github_copilot`. Inside the Docker container, this path is `/app/.secrets/github_token.json`.
+
+### Core Logic (`src/core.py`)
+
+The `get_llm()` factory function in `src/core.py` is responsible for instantiating the correct LangChain LLM class based on the `LLM_PROVIDER` environment variable.
+
+-   If the provider is `ollama`, it returns a `langchain_community.chat_models.ollama.OllamaLLM` instance.
+-   If the provider is `github_copilot`, it reads the token from the path specified by `GITHUB_COPILOT_TOKEN_PATH` and returns a `langchain_openai.ChatOpenAI` instance configured with the appropriate API base URL and the loaded token.
+
+### GitHub Copilot Authentication
+
+To use GitHub Copilot, developers must first run the authentication script:
+
+```bash
+python3 scripts/authenticate_github.py
+```
+
+This script handles the OAuth 2.0 device flow and stores the resulting access token in `.secrets/github_token.json`, which is read by the application at runtime.
+
+## 🐳 Docker Development
+
+The `docker-compose.yml` file is configured for development.
+
+-   The `src` directory is mounted as a volume, allowing for live code reloading.
+-   The `.secrets` directory is also mounted to provide the GitHub Copilot token to the containerized application.
+-   To switch LLM providers, modify the `LLM_PROVIDER` environment variable in the `app` service definition within the `docker-compose.yml` file.
+
+## Vector Store
+
+We use PostgreSQL with the `pgvector` extension for storing document embeddings. The connection is managed via SQLAlchemy. The database schema is defined in `src/models.py`.
 
 ## Core Architecture
 

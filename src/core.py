@@ -7,8 +7,10 @@ from langchain_ollama import OllamaEmbeddings, OllamaLLM
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from typing import Any, List
+import json
+import os
 
-from src.config import DB_CONNECTION_STRING, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_HOST
+from src.config import DB_CONNECTION_STRING, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_HOST, GITHUB_COPILOT_TOKEN_PATH, LLM_PROVIDER
 from src.models import Document as AppDocument  # Alias to avoid name conflict
 
 class VectorDBRetriever(BaseRetriever):
@@ -46,7 +48,47 @@ class VectorDBRetriever(BaseRetriever):
 
 def get_embeddings_model():
     """Initialize the Ollama embeddings model."""
-    return OllamaEmbeddings(model=EMBEDDING_MODEL, base_url=OLLAMA_HOST)
+    from src.ingestion.processing import get_embeddings_model
+    return get_embeddings_model()
+
+def load_github_token() -> str:
+    """Load the GitHub Copilot token from the file."""
+    try:
+        with open(GITHUB_COPILOT_TOKEN_PATH, "r") as f:
+            token_data = json.load(f)
+            return token_data["access_token"]
+    except (FileNotFoundError, KeyError):
+        print(
+            "GitHub Copilot token not found. Please run 'python scripts/authenticate_github.py' first."
+        )
+        return None
+
+def get_llm() -> LLM:
+    """Factory function to get the language model based on the provider."""
+    if LLM_PROVIDER == "github_copilot":
+        print("Using GitHub Copilot as the LLM provider.")
+        token = load_github_token()
+        if not token:
+            raise ValueError(
+                "GitHub Copilot token is missing. Please authenticate first."
+            )
+        return ChatOpenAI(
+            base_url="https://api.githubcopilot.com/chat/completions",
+            api_key=token,
+            model="gpt-4",  # Or other compatible models
+        )
+    elif LLM_PROVIDER == "ollama":
+        print("Using Ollama as the LLM provider.")
+        return OllamaLLM(
+            model=LLM_MODEL,
+            base_url=OLLAMA_HOST,
+            mirostat=None,
+            mirostat_eta=None,
+            mirostat_tau=None,
+            tfs_z=None,
+        )
+    else:
+        raise ValueError(f"Unsupported LLM provider: {LLM_PROVIDER}")
 
 def get_qa_chain():
     """
@@ -61,14 +103,7 @@ def get_qa_chain():
         Session=Session,
         embeddings=embeddings
     )
-    llm = OllamaLLM(
-        model=LLM_MODEL, 
-        base_url=OLLAMA_HOST,
-        mirostat=None,
-        mirostat_eta=None,
-        mirostat_tau=None,
-        tfs_z=None,
-    )
+    llm = get_llm()
 
     template = """
     You are a helpful AI assistant for the RAG-Forge project. Use the following

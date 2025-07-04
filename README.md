@@ -62,33 +62,45 @@ This prompt is sent to a local LLM (via Ollama) to generate a final answer.
 
 ## 📄 Document Ingestion
 
-The primary way to add your own documents to the RAG system is through the `/upload` API endpoint. You can place your files in the `documents_to_ingest/` directory (which is git-ignored) and use the provided script to upload them.
+The primary way to add your own documents to the RAG system is by using the `upload.sh` script.
 
-**Supported File Types:**
-- Markdown (`.md`)
-- Plain Text (`.txt`)
-- PDF (`.pdf`)
-- JSON (`.json`)
-- YAML (`.yml`, `.yaml`)
+1.  **Place your documents** in the `documents_to_ingest/` directory.
+    - Supported file types are: `.txt`, `.md`, `.pdf`, `.json`, `.yml`, and `.yaml`.
 
-To upload all supported documents from the `documents_to_ingest/` directory, run:
-```bash
-./upload.sh
-```
+2.  **Run the upload script:**
+    ```bash
+    ./upload.sh
+    ```
+    This will upload all files from the `documents_to_ingest/` directory to the application. The backend will process and embed them, making them available for queries.
 
-You can also upload a specific file or all files in a different directory:
-```bash
-# Upload a single file
-./upload.sh my_document.pdf
+## 🧠 LLM Configuration
 
-# Upload all supported files from a different directory
-./upload.sh path/to/my/docs/
-```
+This project supports multiple LLM providers for generating responses. You can switch between them by setting the `LLM_PROVIDER` environment variable in `docker-compose.yml`.
 
-When a document is uploaded, any existing data associated with the same filename is automatically removed and replaced with the new content, ensuring your knowledge base stays up-to-date.
+### Providers
 
-## 🛠️ Development
+- **`ollama`** (Default): Uses the locally running Ollama service.
+- **`github_copilot`**: Uses the GitHub Copilot API.
 
-For development guidelines, contribution instructions, and the project's architectural decisions, please refer to the [Developer's Guide (DEV_GUIDE.md)](DEV_GUIDE.md).
+### Authenticating with GitHub Copilot
 
-## 📄 License
+To use the `github_copilot` provider, you first need to authenticate.
+
+1.  **Run the authentication script:**
+    ```bash
+    python3 scripts/authenticate_github.py
+    ```
+
+2.  The script will display a user code and open a browser window.
+
+3.  Enter the code in your browser to authorize the application.
+
+4.  Once authorized, the script will save an access token to `.secrets/github_token.json`. This token is used to make authenticated requests to the Copilot API.
+
+## 🐳 Development
+
+For more detailed information on the development environment, including setting up a local Python environment and running tests, please see the [Development Guide](DEV_GUIDE.md).
+
+## 📜 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
