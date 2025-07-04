@@ -12,28 +12,41 @@ The entire application is a set of interconnected services managed by Docker Com
 
 Here is a simplified view of the component interactions:
 
-```mermaid
-graph TD
-    User(User) --> UI(Streamlit UI);
-    UI --> API(FastAPI Backend);
-    API --> Core(Core RAG Logic);
+```plantuml
+@startuml
+!theme vibrant
 
-    subgraph Core Logic
-        Core --> |1. Embed Query| Ollama;
-        Core --> |2. Search Vectors| Milvus;
-        Core --> |3. Generate Answer| Ollama;
-    end
+actor User
 
-    subgraph Data Ingestion
-        Ingest(Ingestion Script) --> |Reads| Docs(Data Files);
-        Ingest --> |Generates Embeddings| Ollama;
-        Ingest --> |Stores Data & Vectors| Milvus;
-    end
+package "Application" {
+  [Streamlit UI]
+  [FastAPI Backend]
+  [Core RAG Logic]
+}
 
-    subgraph Services
-        Ollama(Ollama);
-        Milvus(Milvus Vector DB);
-    end
+package "Services" {
+  [Ollama]
+  [Milvus Vector DB]
+}
+
+package "Data" {
+  [Data Files]
+}
+
+User --> [Streamlit UI]
+[Streamlit UI] --> [FastAPI Backend] : HTTP Request
+[FastAPI Backend] --> [Core RAG Logic]
+
+[Core RAG Logic] --> [Ollama] : 1. Embed Query
+[Core RAG Logic] --> [Milvus Vector DB] : 2. Search Vectors
+[Core RAG Logic] --> [Ollama] : 3. Generate Answer
+
+[Ingestion Script] .> [Core RAG Logic] : (uses)
+[Ingestion Script] --> [Data Files] : Reads
+[Ingestion Script] --> [Ollama] : Generates Embeddings
+[Ingestion Script] --> [Milvus Vector DB] : Stores Data & Vectors
+
+@enduml
 ```
 
 ### Service Breakdown
