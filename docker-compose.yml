@@ -59,6 +59,7 @@ services:
       # LLM Provider
       - LLM_PROVIDER=github_copilot
       - GITHUB_COPILOT_TOKEN_PATH=/app/.secrets/github_token.json
+      - GITHUB_COPILOT_MODEL=gpt-4
     depends_on:
       postgres:
         condition: service_healthy

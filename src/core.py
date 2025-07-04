@@ -10,7 +10,7 @@ from typing import Any, List
 import json
 import os
 
-from src.config import DB_CONNECTION_STRING, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_HOST, GITHUB_COPILOT_TOKEN_PATH, LLM_PROVIDER
+from src.config import DB_CONNECTION_STRING, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_HOST, GITHUB_COPILOT_TOKEN_PATH, LLM_PROVIDER, GITHUB_COPILOT_MODEL
 from src.models import Document as AppDocument  # Alias to avoid name conflict
 
 class VectorDBRetriever(BaseRetriever):
@@ -75,7 +75,7 @@ def get_llm() -> LLM:
         return ChatOpenAI(
             base_url="https://api.githubcopilot.com/chat/completions",
             api_key=token,
-            model="gpt-4",  # Or other compatible models
+            model=GITHUB_COPILOT_MODEL,
         )
     elif LLM_PROVIDER == "ollama":
         print("Using Ollama as the LLM provider.")

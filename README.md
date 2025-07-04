@@ -82,6 +82,8 @@ This project supports multiple LLM providers for generating responses. You can s
 - **`ollama`** (Default): Uses the locally running Ollama service.
 - **`github_copilot`**: Uses the GitHub Copilot API.
 
+You can set the model for each provider using the `LLM_MODEL` (for `ollama`) and `GITHUB_COPILOT_MODEL` (for `github_copilot`) environment variables in `docker-compose.yml`.
+
 ### Authenticating with GitHub Copilot
 
 To use the `github_copilot` provider, you first need to authenticate.

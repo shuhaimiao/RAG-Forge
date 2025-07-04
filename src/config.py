@@ -21,6 +21,7 @@ LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
 GITHUB_COPILOT_TOKEN_PATH = os.getenv(
     "GITHUB_COPILOT_TOKEN_PATH", ".secrets/github_token.json"
 )
+GITHUB_COPILOT_MODEL = os.getenv("GITHUB_COPILOT_MODEL", "gpt-4")
 
 # RAG Configuration
 COLLECTION_NAME = "rag_forge_collection"
