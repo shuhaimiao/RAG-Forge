@@ -57,6 +57,7 @@ With a valid access token stored, the application can now make authenticated req
 - **API Endpoint**: `https://api.githubcopilot.com/chat/completions`
 - **Authentication**: Each request to the API must include the token in the `Authorization` header.
     - **Header**: `Authorization: Bearer <access_token>`
+- **Model Selection**: API requests to the provider must specify which model to use. For a comprehensive, open-source list of available models and their provider-specific identifiers, refer to [Models.dev](https://models.dev/). This resource is invaluable for finding the correct `Model ID` to use in API calls.
 
 The provider implementation lazy-loads the token from the secure store upon initialization and attaches it to every subsequent API request for that session. A separate file, `packages/opencode/src/auth/copilot.ts`, contains specific logic for managing the Copilot API token, which has slightly different requirements than the standard GitHub API.
 
