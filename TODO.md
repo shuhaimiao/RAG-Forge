@@ -6,21 +6,26 @@ This file tracks the major features and tasks for the RAG-Forge project.
 
 **Status: Pending**
 
-**Goal:** Create a standalone Python library for managing LLM providers, authentication, and model selection, inspired by `opencode`. This library will be used by RAG-Forge and other future projects.
+**Goal:** Create a standalone Python library for managing **generative LLMs**, inspired by `opencode`. This library will be used by RAG-Forge and other future projects for reasoning and response generation. Embedding and reranker models will continue to be managed via environment variables for now.
 
 -   [ ] **1. Library Scaffolding (`model-forge-lib`)**
     -   Set up a new Python project with a standard packaging structure (`pyproject.toml`, etc.).
 -   [ ] **2. Core Components**
-    -   **Authentication (`auth` module):** Generalize the existing GitHub device auth flow to be provider-agnostic. Implement secure token storage and retrieval (e.g., using the OS keychain).
+    -   **Authentication (`auth` module):** Implement a flexible authentication module supporting multiple strategies:
+        -   **Device Auth Flow:** Generalize the existing GitHub implementation for OAuth 2.0.
+        -   **API Key:** A simple handler for providers requiring a static API key.
+        -   **Local Instance:** A handler for providers like Ollama that only require a base URL.
+        -   Implement secure token storage for all applicable credentials.
     -   **Configuration (`config` module):** Implement logic to load and manage model configurations from a central user file (e.g., `~/.config/modelforge/models.json`).
-    -   **Registry (`registry` module):** Create a central class that acts as a factory.
-        -   `get_available_models()`: Lists all configured models.
-        -   `get_model_instance(model_id)`: Returns an initialized LangChain-compatible model instance based on its ID (e.g., `github_copilot/claude-3.7-sonnet`).
+    -   **Registry (`registry` module):** Create a central class that acts as a factory for **generative LLMs only**.
+        -   `get_available_models()`: Lists all configured generative models.
+        -   `get_model_instance(model_id)`: Returns an initialized LangChain-compatible model instance based on its ID (e.g., `github_copilot/claude-3.7-sonnet`, `ollama/qwen3:1.7b`).
 -   [ ] **3. Integration with RAG-Forge**
     -   Update RAG-Forge to install and use the new library.
     -   Refactor `src/core.py` to replace the `get_llm()` function with a call to the new library's model factory.
+    -   Keep the existing `get_embeddings_model()` function as-is, reading from environment variables.
 -   [ ] **4. Management UI**
-    -   Build a new Streamlit page within RAG-Forge that uses the library to provide a UI for logging into providers and selecting the active model.
+    -   Build a new Streamlit page within RAG-Forge that uses the library to provide a UI for logging into providers and selecting the active **generative LLM**.
 
 ---
 
