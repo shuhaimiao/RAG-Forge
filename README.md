@@ -103,6 +103,27 @@ To use the `github_copilot` provider, you first need to authenticate.
 
 For more detailed information on the development environment, including setting up a local Python environment and running tests, please see the [Development Guide](DEV_GUIDE.md).
 
+### Local Script Setup
+
+To run the utility scripts in the `scripts/` directory (like `authenticate.sh`), you need a local Python environment.
+
+1.  **Create a virtual environment:**
+    ```bash
+    python3 -m venv venv
+    ```
+
+2.  **Activate it:**
+    ```bash
+    source venv/bin/activate
+    ```
+
+3.  **Install dependencies:**
+    ```bash
+    pip install -r scripts/requirements.txt
+    ```
+
+Now you can run the authentication and upload scripts.
+
 ## 📜 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
