@@ -2,6 +2,28 @@
 
 This file tracks the major features and tasks for the RAG-Forge project.
 
+## Feature: Reusable Model Management Library
+
+**Status: Pending**
+
+**Goal:** Create a standalone Python library for managing LLM providers, authentication, and model selection, inspired by `opencode`. This library will be used by RAG-Forge and other future projects.
+
+-   [ ] **1. Library Scaffolding (`model-forge-lib`)**
+    -   Set up a new Python project with a standard packaging structure (`pyproject.toml`, etc.).
+-   [ ] **2. Core Components**
+    -   **Authentication (`auth` module):** Generalize the existing GitHub device auth flow to be provider-agnostic. Implement secure token storage and retrieval (e.g., using the OS keychain).
+    -   **Configuration (`config` module):** Implement logic to load and manage model configurations from a central user file (e.g., `~/.config/modelforge/models.json`).
+    -   **Registry (`registry` module):** Create a central class that acts as a factory.
+        -   `get_available_models()`: Lists all configured models.
+        -   `get_model_instance(model_id)`: Returns an initialized LangChain-compatible model instance based on its ID (e.g., `github_copilot/claude-3.7-sonnet`).
+-   [ ] **3. Integration with RAG-Forge**
+    -   Update RAG-Forge to install and use the new library.
+    -   Refactor `src/core.py` to replace the `get_llm()` function with a call to the new library's model factory.
+-   [ ] **4. Management UI**
+    -   Build a new Streamlit page within RAG-Forge that uses the library to provide a UI for logging into providers and selecting the active model.
+
+---
+
 ## Document Management UI
 
 **Status: Pending**
