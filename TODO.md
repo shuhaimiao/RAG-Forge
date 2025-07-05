@@ -1,98 +1,61 @@
-# RAG-Forge TODO List
+# RAG-Forge Project Plan
 
-This file tracks the major features and tasks for the RAG-Forge project.
-
-## Feature: Reusable Model Management Library
-
-**Status: Pending**
-
-**Goal:** Create a standalone Python library for managing **generative LLMs**, inspired by `opencode`. This library will be used by RAG-Forge and other future projects for reasoning and response generation. Embedding and reranker models will continue to be managed via environment variables for now.
-
--   [ ] **1. Library Scaffolding (`model-forge-lib`)**
-    -   Set up a new Python project with a standard packaging structure (`pyproject.toml`, etc.).
--   [ ] **2. Core Components**
-    -   **Authentication (`auth` module):** Implement a flexible authentication module supporting multiple strategies:
-        -   **Device Auth Flow:** Generalize the existing GitHub implementation for OAuth 2.0.
-        -   **API Key:** A simple handler for providers requiring a static API key.
-        -   **Local Instance:** A handler for providers like Ollama that only require a base URL.
-        -   Implement secure token storage for all applicable credentials.
-    -   **Configuration (`config` module):** Implement logic to load and manage model configurations from a central user file (e.g., `~/.config/modelforge/models.json`).
-    -   **Registry (`registry` module):** Create a central class that acts as a factory for **generative LLMs only**.
-        -   `get_available_models()`: Lists all configured generative models.
-        -   `get_model_instance(model_id)`: Returns an initialized LangChain-compatible model instance based on its ID (e.g., `github_copilot/claude-3.7-sonnet`, `ollama/qwen3:1.7b`).
--   [ ] **3. Integration with RAG-Forge**
-    -   Update RAG-Forge to install and use the new library.
-    -   Refactor `src/core.py` to replace the `get_llm()` function with a call to the new library's model factory.
-    -   Keep the existing `get_embeddings_model()` function as-is, reading from environment variables.
--   [ ] **4. Management UI**
-    -   Build a new Streamlit page within RAG-Forge that uses the library to provide a UI for logging into providers and selecting the active **generative LLM**.
+This document tracks the current refactoring efforts and future feature enhancements for the RAG-Forge project.
 
 ---
 
-## Document Management UI
+## Part 1: Current Refactoring Plan
 
-**Status: Pending**
+*Objective: To solidify the project's foundation by improving code quality, decoupling services, and establishing best practices before adding new features.*
 
-This feature will add a dedicated page to the Streamlit application to manage the documents in the vector store.
+### Phase 1.1: Solidify `model-forge-lib` as a Standalone Library
+- **Task 1.1.1: Enhance CLI with a Scalable Provider Registry** (`pending`)
+- **Task 1.1.2: Implement Robust Error Handling** (`pending`)
+- **Task 1.1.3: Secure API Key Input in CLI** (`pending`)
 
--   [ ] **Backend API (`src/main.py`):**
-    -   Create a new endpoint to list all ingested documents (`GET /documents`).
-    -   Create an endpoint to delete a document and its embeddings by its source (`DELETE /documents`).
-    -   Create an endpoint to re-index a document (`POST /documents/reindex`).
-    -   Create an endpoint to "un-index" a document (i.e., mark it as inactive) without deleting it (`PUT /documents/status`).
--   [ ] **UI Page (`src/pages/1_Manage_Documents.py`):**
-    -   Create a new Streamlit page to serve as the management interface.
-    -   Implement a table view to display the list of all ingested documents, showing their source and status.
-    -   Add action buttons (Delete, Re-index, Un-index) for each document in the list.
--   [ ] **Core Logic (`src/ingestion/processing.py`, `src/core.py`):**
-    -   Implement the business logic for deleting, re-indexing, and changing the status of documents in the database.
+### Phase 1.2: Decouple and Refine `RAG-Forge` Application
+- **Task 1.2.1: Decouple the Docker Build Process** (`pending`)
+- **Task 1.2.2: Strengthen the API Contract** (`pending`)
+- **Task 1.2.3: Implement Pydantic-based Settings Management** (`pending`)
 
 ---
 
-## Agentic RAG: Conversational Memory
+## Part 2: Future Feature Enhancements
 
-**Status: Pending**
+*Objective: To add new capabilities to RAG-Forge after the foundational refactoring is complete.*
 
-The goal of this feature is to transform the RAG system from a stateless question-answering service into a stateful conversational agent that remembers the context of the interaction.
+### Feature: Document Management UI
+- **Goal:** Add a dedicated page to the Streamlit application to manage the documents in the vector store.
+- **Tasks:**
+    - `[ ]` Backend API: Create endpoints for listing, deleting, and re-indexing documents.
+    - `[ ]` UI Page: Build the Streamlit interface with a table view and action buttons.
+    - `[ ]` Core Logic: Implement the business logic for all document management actions.
+- **Status:** `Pending`
 
--   [ ] **Core Logic:** Refactor `src/core.py` to use a chain that supports memory, like `ConversationalRetrievalChain`.
--   [ ] **API:** Update the FastAPI endpoint in `src/main.py` to manage and pass conversational history.
--   [ ] **UI:** Modify the Streamlit interface in `src/ui.py` to display the chat history and manage the conversation state on the front end.
-
----
-
-## Advanced RAG: Cross-Encoder Reranking
-
-**Status: Pending**
-
-This feature will enhance retrieval accuracy by adding a reranking step to the RAG pipeline. This will use a more powerful cross-encoder model to re-score the documents returned by the initial vector search.
-
--   [ ] **Research:**
-    -   Identify a suitable cross-encoder model from Ollama Hub (e.g., `rank-zephyr`, `bge-reranker-v2`) that balances performance and resource requirements.
--   [ ] **Configuration (`docker-compose.yml`, `src/config.py`):**
-    -   Add a `RERANKER_MODEL` environment variable to specify the model.
-    -   Add a `USE_RERANKER` boolean flag to easily enable or disable the feature.
-    -   Update the `OLLAMA_MODELS_TO_PULL` list in `docker-compose.yml` to automatically download the chosen reranker model.
--   [ ] **Core Logic (`src/core.py`):**
-    -   Integrate the `ContextualCompressionRetriever` from LangChain.
-    -   Implement the `RankLLMRerank` document compressor, configuring it to use the specified Ollama model.
-    -   Modify the `get_qa_chain` function to wrap the base `VectorDBRetriever` with the new compression retriever when `USE_RERANKER` is true.
--   [ ] **UI Enhancement (`src/ui.py`) (Optional):**
-    -   Add a toggle switch to the sidebar to allow real-time switching between the standard retriever and the reranking retriever for comparison.
+### Feature: Advanced RAG - Cross-Encoder Reranking
+- **Goal:** Enhance retrieval accuracy by adding a reranking step to the RAG pipeline.
+- **Tasks:**
+    - `[ ]` Research: Identify a suitable cross-encoder model.
+    - `[ ]` Configuration: Add environment variables to enable/disable reranking and specify the model.
+    - `[ ]` Core Logic: Integrate `ContextualCompressionRetriever` from LangChain.
+- **Status:** `Pending`
 
 ---
 
-## Completed Features
+## Part 3: Completed Features
 
-### ✅ GitHub Copilot Integration
+### ✅ Agentic RAG: Conversational Memory
+- **Description:** Transformed the RAG system into a stateful conversational agent.
+- **Tasks:**
+    - `[x]` Core Logic: Refactored `src/core.py` to use `ConversationalRetrievalChain`.
+    - `[x]` API: Updated the FastAPI endpoint to manage conversation history.
+    - `[x]` UI: Modified the Streamlit interface to display chat history.
+- **Status:** `Completed`
 
-**Status: Completed**
-
-This feature added support for using GitHub Copilot as an alternative, cloud-based LLM provider, authenticated via a secure device flow.
-
--   **Configuration:** Added environment variables for `LLM_PROVIDER` and token paths.
--   **Authentication:** Created the `scripts/authenticate_github.py` script for the OAuth2 device flow.
--   **Core Logic:** Implemented a factory function in `src/core.py` to select the LLM provider.
--   **Docker:** Updated `docker-compose.yml` to mount the secrets.
--   **Documentation:** Updated `README.md` and `DEV_GUIDE.md` with setup instructions.
--   **Bugfix:** Corrected startup scripts (`start.sh`, `entrypoint.sh`) and fixed various bugs related to imports and API endpoints. 
+### ✅ GitHub Copilot & `model-forge-lib` Integration
+- **Description:** Created and integrated a reusable library for managing generative LLMs.
+- **Tasks:**
+    - `[x]` Created `model-forge-lib` project.
+    - `[x]` Implemented authentication, configuration, and a model registry.
+    - `[x]` Integrated the library into `RAG-Forge`.
+- **Status:** `Completed` 
