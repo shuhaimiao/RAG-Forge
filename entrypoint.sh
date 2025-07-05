@@ -25,4 +25,6 @@ uvicorn src.main:app --host 0.0.0.0 --port 8000 &
 
 # Start Streamlit in the foreground. This will keep the container running.
 echo "Starting Streamlit UI..."
-streamlit run src/ui.py --server.port 8501 --server.address 0.0.0.0 
+streamlit run src/ui.py --server.port 8501 --server.address 0.0.0.0
+
+wait 

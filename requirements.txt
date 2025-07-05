@@ -16,3 +16,4 @@ tqdm
 pypdf
 PyYAML
 langchain-openai
+-e ../model-forge-lib

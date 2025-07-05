@@ -147,7 +147,4 @@ logs/
 *.pem
 *.key
 
-opencode-gitignore.secrets/
-opencode-gitignore/
-
 .secrets/

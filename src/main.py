@@ -4,8 +4,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import tempfile
 import os
+from typing import List, Tuple, Dict, Any
 
-from src.core import get_qa_chain
+from src.core import query_rag
 from src.ingestion.processing import (
     get_document_splits,
     embed_and_store_splits,
@@ -13,17 +14,16 @@ from src.ingestion.processing import (
 )
 from src.config import DB_CONNECTION_STRING
 
-# Initialize the QA chain
-qa_chain = get_qa_chain()
-
 # Define the request body model
 class QueryRequest(BaseModel):
     query: str
+    chat_history: List[Tuple[str, str]] = []
 
 # Define the response body model
 class QueryResponse(BaseModel):
     answer: str
-    source_documents: list
+    source_documents: List[Dict[str, Any]]
+    chat_history: List[Tuple[str, str]]
 
 # Create the FastAPI app
 app = FastAPI(
@@ -83,13 +83,23 @@ def upload_document(file: UploadFile = File(...)):
 @app.post("/query", response_model=QueryResponse)
 def query_endpoint(request: QueryRequest):
     """
-    FastAPI endpoint to handle RAG queries.
+    FastAPI endpoint to handle RAG queries with conversational history.
     """
-    result = qa_chain({"query": request.query})
+    result = query_rag(request.query, request.chat_history)
+    
+    # Update chat history
+    updated_history = request.chat_history + [(request.query, result["answer"])]
+
+    # Format source documents
+    source_docs = [
+        {"page_content": doc.page_content, "metadata": doc.metadata}
+        for doc in result["source_documents"]
+    ]
     
     return QueryResponse(
-        answer=result["result"],
-        source_documents=[doc.dict() for doc in result["source_documents"]]
+        answer=result["answer"],
+        source_documents=source_docs,
+        chat_history=updated_history
     )
 
 @app.get("/")

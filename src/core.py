@@ -3,16 +3,13 @@ from sqlalchemy.orm import sessionmaker
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document as LangChainDocument
-from langchain_ollama import OllamaEmbeddings, OllamaLLM
-from langchain.chains import RetrievalQA
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
-from typing import Any, List
-import json
-import os
-from langchain_core.language_models import LLM
-from langchain_openai import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+from typing import Any, List, Tuple
+from modelforge.registry import ModelForgeRegistry
 
-from src.config import DB_CONNECTION_STRING, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_HOST, GITHUB_COPILOT_TOKEN_PATH, LLM_PROVIDER, GITHUB_COPILOT_MODEL
+from src.config import DB_CONNECTION_STRING
 from src.models import Document as AppDocument  # Alias to avoid name conflict
 
 class VectorDBRetriever(BaseRetriever):
@@ -53,48 +50,9 @@ def get_embeddings_model():
     from src.ingestion.processing import get_embeddings_model
     return get_embeddings_model()
 
-def load_github_token() -> str:
-    """Load the GitHub Copilot token from the file."""
-    try:
-        with open(GITHUB_COPILOT_TOKEN_PATH, "r") as f:
-            token_data = json.load(f)
-            return token_data["access_token"]
-    except (FileNotFoundError, KeyError):
-        print(
-            "GitHub Copilot token not found. Please run 'python scripts/authenticate_github.py' first."
-        )
-        return None
-
-def get_llm() -> LLM:
-    """Factory function to get the language model based on the provider."""
-    if LLM_PROVIDER == "github_copilot":
-        print("Using GitHub Copilot as the LLM provider.")
-        token = load_github_token()
-        if not token:
-            raise ValueError(
-                "GitHub Copilot token is missing. Please authenticate first."
-            )
-        return ChatOpenAI(
-            base_url="https://api.githubcopilot.com",
-            api_key=token,
-            model=GITHUB_COPILOT_MODEL,
-        )
-    elif LLM_PROVIDER == "ollama":
-        print("Using Ollama as the LLM provider.")
-        return OllamaLLM(
-            model=LLM_MODEL,
-            base_url=OLLAMA_HOST,
-            mirostat=None,
-            mirostat_eta=None,
-            mirostat_tau=None,
-            tfs_z=None,
-        )
-    else:
-        raise ValueError(f"Unsupported LLM provider: {LLM_PROVIDER}")
-
 def get_qa_chain():
     """
-    Initializes and returns a RetrievalQA chain.
+    Initializes and returns a ConversationalRetrievalChain.
     """
     embeddings = get_embeddings_model()
     engine = create_engine(DB_CONNECTION_STRING)
@@ -105,31 +63,60 @@ def get_qa_chain():
         Session=Session,
         embeddings=embeddings
     )
-    llm = get_llm()
+    
+    # Use ModelForge to get the currently selected LLM
+    registry = ModelForgeRegistry()
+    llm = registry.get_llm()
+    if not llm:
+        raise RuntimeError("Failed to get LLM from ModelForgeRegistry. Please check its configuration.")
 
-    template = """
-    You are a helpful AI assistant for the RAG-Forge project. Use the following
-    context to answer the question. First, think through your plan to answer the question inside <think></think> tags.
-    Then, answer the user's question. If you don't know the answer, say that you don't know, don't try to make up an answer.
+    # This memory object will store the chat history.
+    # We explicitly set the output_key to 'answer' so the memory knows which
+    # part of the chain's output to store in the history.
+    memory = ConversationBufferMemory(
+        memory_key="chat_history",
+        return_messages=True,
+        output_key="answer"
+    )
 
-    Context: {context}
-    Question: {question}
-
-    Answer:
-    """
-    prompt = PromptTemplate.from_template(template)
-
-    qa_chain = RetrievalQA.from_chain_type(
+    # Note: We are no longer using the custom prompt template directly here.
+    # ConversationalRetrievalChain has its own internal prompting mechanisms.
+    # We can customize this later if needed.
+    qa_chain = ConversationalRetrievalChain.from_llm(
         llm,
         retriever=retriever,
+        memory=memory,
         return_source_documents=True,
-        chain_type_kwargs={"prompt": prompt},
     )
     return qa_chain
 
+# This will be the main entry point for the API
+def query_rag(query: str, chat_history: List[Tuple[str, str]]):
+    """
+    Performs a query against the RAG chain with conversation history.
+    """
+    qa_chain = get_qa_chain()
+    # The chain now expects a dictionary with "question" and "chat_history"
+    result = qa_chain({"question": query, "chat_history": chat_history})
+    return result
+
 if __name__ == '__main__':
     # Example usage for direct testing
-    test_query = "What are the best practices for API authentication?"
-    answer = query_rag(test_query)
-    print("\n--- Final Answer ---")
-    print(answer) 
+    # Note: The interaction flow is now conversational
+    history = []
+    
+    # First question
+    q1 = "What are the best practices for API authentication?"
+    print(f"User: {q1}")
+    result1 = query_rag(q1, history)
+    print(f"AI: {result1['answer']}")
+    history.append((q1, result1['answer']))
+
+    print("\n" + "-"*30 + "\n")
+
+    # Follow-up question
+    q2 = "Can you elaborate on token-based methods?"
+    print(f"User: {q2}")
+    result2 = query_rag(q2, history)
+    print(f"AI: {result2['answer']}")
+    history.append((q2, result2['answer'])) 
