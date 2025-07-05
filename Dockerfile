@@ -22,13 +22,8 @@ ENV PYTHONPATH "${PYTHONPATH}:/app"
 # Copy the rest of the application source code into the container
 COPY . .
 
-# Copy the rest of the application's code into the container
-COPY ./src /app/src
-COPY ./data /app/data
-COPY ./start.sh /app/
+# Make the entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
 
-# Make the startup script executable
-RUN chmod +x /app/start.sh
-
-# Run start.sh when the container launches
-ENTRYPOINT ["/app/start.sh"] 
+# Run entrypoint.sh when the container launches
+ENTRYPOINT ["/app/entrypoint.sh"] 

@@ -59,7 +59,7 @@ services:
       # LLM Provider
       - LLM_PROVIDER=github_copilot
       - GITHUB_COPILOT_TOKEN_PATH=/app/.secrets/github_token.json
-      - GITHUB_COPILOT_MODEL=Claude Sonnet 3.7
+      - GITHUB_COPILOT_MODEL=claude-3.7-sonnet
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,53 +1,30 @@
-# Project TODO List
+# RAG-Forge TODO List
 
-This file tracks the upcoming features and tasks for the RAG-Forge project.
+This file tracks the major features and tasks for the RAG-Forge project.
 
-## Implement Conversational Memory (Agentic RAG)
+## Agentic RAG: Conversational Memory
 
-The current RAG implementation is stateless. The following tasks will introduce conversational memory to allow for follow-up questions and a more natural, stateful interaction.
+**Status: Pending**
 
-- [ ] **Refactor Core Logic (`src/core.py`):**
-    - [ID: `conversational_chain`]
-    - Replace the `RetrievalQA` chain with `ConversationalRetrievalChain`.
-    - Integrate a memory component (e.g., `ConversationBufferMemory`) to manage chat history.
+The goal of this feature is to transform the RAG system from a stateless question-answering service into a stateful conversational agent that remembers the context of the interaction.
 
-- [ ] **Update API Endpoint (`src/main.py`):**
-    - [ID: `update_api`]
-    - Depends on: `conversational_chain`
-    - Modify the `/query` endpoint to accept and pass conversation history.
+-   [ ] **Core Logic:** Refactor `src/core.py` to use a chain that supports memory, like `ConversationalRetrievalChain`.
+-   [ ] **API:** Update the FastAPI endpoint in `src/main.py` to manage and pass conversational history.
+-   [ ] **UI:** Modify the Streamlit interface in `src/ui.py` to display the chat history and manage the conversation state on the front end.
 
-- [ ] **Enhance User Interface (`src/ui.py`):**
-    - [ID: `update_ui`]
-    - Depends on: `update_api`
-    - Update the Streamlit UI to maintain and display the full chat history.
-    - Pass the history to the backend with each new user query.
+---
 
-## GitHub Copilot Integration via Device Auth
+## Completed Features
 
-This feature will add support for using GitHub Copilot as an alternative LLM for response generation, keeping Ollama for embeddings. This requires implementing the OAuth 2.0 Device Authorization Flow to securely obtain an access token.
+### ✅ GitHub Copilot Integration
 
-- [ ] **Configuration Setup:**
-    - [ID: `gh_config`]
-    - Add `LLM_PROVIDER` and `GITHUB_COPILOT_TOKEN_PATH` to the configuration.
-    - Create a `.secrets` directory for token storage and add it to `.gitignore`.
+**Status: Completed**
 
-- [ ] **Create Authentication Script (`scripts/authenticate_github.py`):**
-    - [ID: `gh_auth_script`]
-    - Depends on: `gh_config`
-    - Develop a script to handle the device auth flow: fetch user code, poll for the token, and save it securely.
+This feature added support for using GitHub Copilot as an alternative, cloud-based LLM provider, authenticated via a secure device flow.
 
-- [ ] **Core Logic Integration (`src/core.py`):**
-    - [ID: `gh_core_logic`]
-    - Depends on: `gh_config`
-    - Implement a factory function (`get_llm`) to select the LLM provider (`ollama` or `github_copilot`) based on the environment variable.
-    - Add logic to load the GitHub Copilot token and instantiate a LangChain chat model for it.
-
-- [ ] **Update Docker Configuration (`docker-compose.yml`):**
-    - [ID: `gh_docker_update`]
-    - Depends on: `gh_config`
-    - Mount the `.secrets` directory into the application container to make the token accessible.
-
-- [ ] **Documentation (`README.md`, `DEV_GUIDE.md`):**
-    - [ID: `gh_docs`]
-    - Depends on: `gh_auth_script`, `gh_core_logic`
-    - Document the new authentication process and how to switch between LLM providers. 
+-   **Configuration:** Added environment variables for `LLM_PROVIDER` and token paths.
+-   **Authentication:** Created the `scripts/authenticate_github.py` script for the OAuth2 device flow.
+-   **Core Logic:** Implemented a factory function in `src/core.py` to select the LLM provider.
+-   **Docker:** Updated `docker-compose.yml` to mount the secrets.
+-   **Documentation:** Updated `README.md` and `DEV_GUIDE.md` with setup instructions.
+-   **Bugfix:** Corrected startup scripts (`start.sh`, `entrypoint.sh`) and fixed various bugs related to imports and API endpoints. 

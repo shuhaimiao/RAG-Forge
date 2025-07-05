@@ -9,6 +9,8 @@ from langchain.prompts import PromptTemplate
 from typing import Any, List
 import json
 import os
+from langchain_core.language_models import LLM
+from langchain_openai import ChatOpenAI
 
 from src.config import DB_CONNECTION_STRING, EMBEDDING_MODEL, LLM_MODEL, OLLAMA_HOST, GITHUB_COPILOT_TOKEN_PATH, LLM_PROVIDER, GITHUB_COPILOT_MODEL
 from src.models import Document as AppDocument  # Alias to avoid name conflict
@@ -73,7 +75,7 @@ def get_llm() -> LLM:
                 "GitHub Copilot token is missing. Please authenticate first."
             )
         return ChatOpenAI(
-            base_url="https://api.githubcopilot.com/chat/completions",
+            base_url="https://api.githubcopilot.com",
             api_key=token,
             model=GITHUB_COPILOT_MODEL,
         )

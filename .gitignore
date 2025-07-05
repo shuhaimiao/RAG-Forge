@@ -149,3 +149,5 @@ logs/
 
 opencode-gitignore.secrets/
 opencode-gitignore/
+
+.secrets/
